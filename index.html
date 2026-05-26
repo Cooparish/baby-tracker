@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Baby Tracker</title>
+  <style>
+    :root {
+      --sleep:        #4ade80;
+      --sleep-dk:     #14532d;
+      --breast:       #60a5fa;
+      --breast-dk:    #1e3a5f;
+      --bottle:       #fb923c;
+      --bottle-dk:    #7c2d12;
+      --pump:         #e879f9;
+      --pump-dk:      #581c87;
+      --bg:           #0f172a;
+      --surface:      #1e293b;
+      --surface2:     #334155;
+      --border:       #475569;
+      --text:         #f1f5f9;
+      --muted:        #94a3b8;
+      --red:          #ef4444;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .header-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    /* ── Active Timers ── */
+    #active-timers { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 0; flex-shrink: 0; }
+    .timer-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-left: 4px solid transparent;
+    }
+    .timer-card.sleep  { border-color: var(--sleep); }
+    .timer-card.breast { border-color: var(--breast); }
+    .timer-card.pump   { border-color: var(--pump); }
+    .timer-meta { display: flex; flex-direction: column; gap: 1px; }
+    .timer-type { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .timer-clock {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+    .stop-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .stop-btn:active { opacity: 0.8; }
+
+    /* ── Quick Actions ── */
+    #quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 10px 12px;
+      flex-shrink: 0;
+    }
+    .action-btn {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.1s, opacity 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .action-btn:active { transform: scale(0.95); opacity: 0.85; }
+    .action-btn .a-icon { font-size: 1.4rem; line-height: 1; margin-bottom: 4px; }
+    .action-btn .a-label { font-size: 0.92rem; font-weight: 700; }
+    .action-btn .a-sub   { font-size: 0.72rem; opacity: 0.75; }
+    .action-btn.sleep  { background: var(--sleep);  color: var(--sleep-dk); }
+    .action-btn.breast { background: var(--breast); color: var(--breast-dk); }
+    .action-btn.bottle { background: var(--bottle); color: var(--bottle-dk); }
+    .action-btn.pump   { background: var(--pump);   color: var(--pump-dk); }
+
+    /* ── Calendar ── */
+    #calendar { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .week-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      flex-shrink: 0;
+    }
+    .week-nav-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .week-nav-btn:disabled { opacity: 0.35; cursor: default; }
+    #week-label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      gap: 12px;
+      padding: 2px 12px 6px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .leg { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--muted); }
+    .leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+    /* Timeline wrapper */
+    .tl-outer {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Day header row (fixed, outside scroll) */
+    .tl-head {
+      display: grid;
+      grid-template-columns: 34px repeat(7, 1fr);
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tl-head-cell {
+      padding: 4px 2px;
+      text-align: center;
+      font-size: 0.68rem;
+      color: var(--muted);
+      border-left: 1px solid var(--border);
+    }
+    .tl-head-cell:first-child { border-left: none; }
+    .tl-head-cell.today { color: var(--breast); font-weight: 700; }
+    .tl-head-cell .dn { display: block; font-size: 0.62rem; text-transform: uppercase; }
+    .tl-head-cell .dd { display: block; font-size: 1rem; font-weight: 700; line-height: 1.1; }
+
+    /* Scrollable body */
+    .tl-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tl-grid {
+      display: grid;
+      grid-template-columns: 34px repeat(7, 1fr);
+    }
+
+    /* Time gutter */
+    .tl-time-col { position: relative; }
+    .tl-hour-label {
+      position: absolute;
+      right: 3px;
+      font-size: 0.55rem;
+      color: var(--border);
+      transform: translateY(-50%);
+      white-space: nowrap;
+    }
+
+    /* Day columns */
+    .tl-day-col {
+      position: relative;
+      border-left: 1px solid var(--border);
+    }
+    .hour-tick {
+      position: absolute;
+      left: 0; right: 0;
+      border-top: 1px solid var(--border);
+      opacity: 0.25;
+    }
+
+    /* Events */
+    .evt {
+      position: absolute;
+      left: 1px; right: 1px;
+      border-radius: 3px;
+      padding: 1px 2px;
+      font-size: 0.55rem;
+      font-weight: 600;
+      overflow: hidden;
+      cursor: pointer;
+      line-height: 1.2;
+      min-height: 3px;
+    }
+    .evt.sleep  { background: var(--sleep);  color: var(--sleep-dk); }
+    .evt.breast { background: var(--breast); color: var(--breast-dk); }
+    .evt.bottle { background: var(--bottle); color: var(--bottle-dk); }
+    .evt.pump   { background: var(--pump);   color: var(--pump-dk); }
+    .evt.live   { opacity: 0.65; outline: 1px dashed rgba(255,255,255,0.4); }
+
+    /* Now line */
+    .now-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: var(--red);
+      z-index: 5;
+    }
+    .now-line::before {
+      content: '';
+      position: absolute;
+      left: -3px;
+      top: -3px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .overlay.hidden { display: none; }
+    .modal {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+      width: 100%;
+      max-width: 480px;
+    }
+    .modal h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; }
+    .modal-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-row:last-of-type { border-bottom: none; }
+    .modal-lbl { font-size: 0.88rem; color: var(--muted); }
+    .stepper { display: flex; align-items: center; gap: 10px; }
+    .step-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-btn:active { opacity: 0.7; }
+    .step-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      min-width: 62px;
+      text-align: center;
+    }
+    .modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+    .mbtn {
+      flex: 1;
+      padding: 13px;
+      border-radius: 12px;
+      border: none;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .mbtn-cancel  { background: var(--surface2); color: var(--text); }
+    .mbtn-confirm { background: #3b82f6; color: white; }
+    .mbtn-danger  { background: #7f1d1d; color: #fca5a5; }
+
+    /* Detail modal extras */
+    .detail-time { font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .detail-row:last-of-type { border-bottom: none; }
+    .detail-val { font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🍼 Baby Tracker</h1>
+  <div class="header-actions">
+    <label class="header-btn" style="cursor:pointer">
+      Import CSV
+      <input type="file" accept=".csv" id="csv-file" style="display:none">
+    </label>
+  </div>
+</header>
+
+<div id="active-timers"></div>
+
+<div id="quick-actions">
+  <button class="action-btn sleep"  onclick="startTimer('sleep')">
+    <span class="a-icon">😴</span>
+    <span class="a-label">Sleep</span>
+    <span class="a-sub">Start / stop nap</span>
+  </button>
+  <button class="action-btn breast" onclick="startTimer('breast')">
+    <span class="a-icon">🤱</span>
+    <span class="a-label">Breast Feed</span>
+    <span class="a-sub">Timer + L/R sides</span>
+  </button>
+  <button class="action-btn bottle" onclick="openBottleModal()">
+    <span class="a-icon">🍼</span>
+    <span class="a-label">Bottle</span>
+    <span class="a-sub">Log oz consumed</span>
+  </button>
+  <button class="action-btn pump" onclick="startTimer('pump')">
+    <span class="a-icon">🩵</span>
+    <span class="a-label">Pump</span>
+    <span class="a-sub">Timer + oz yield</span>
+  </button>
+</div>
+
+<div id="calendar">
+  <div class="week-nav">
+    <button class="week-nav-btn" onclick="shiftWeek(-1)">← Prev</button>
+    <span id="week-label"></span>
+    <button class="week-nav-btn" id="btn-next" onclick="shiftWeek(1)" disabled>Next →</button>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:var(--sleep)"></div>Sleep</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--breast)"></div>Breast</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--bottle)"></div>Bottle</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--pump)"></div>Pump</div>
+  </div>
+  <div class="tl-outer">
+    <div class="tl-head" id="tl-head"></div>
+    <div class="tl-body" id="tl-body">
+      <div class="tl-grid" id="tl-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay hidden" id="overlay" onclick="overlayClick(event)">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────
+const STORE = 'btr_v1';
+const HOUR_PX = 52;
+const DAY_PX  = HOUR_PX * 24;
+
+const LABELS = { sleep:'Sleep', breast:'Breast Feed', bottle:'Bottle', pump:'Pump' };
+const ICONS  = { sleep:'😴', breast:'🤱', bottle:'🍼', pump:'🩵' };
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// oz → fraction string
+const OZ_FRAC = { 0.25:'¼', 0.5:'½', 0.75:'¾' };
+function fmtOz(oz) {
+  if (!oz) return '0 oz';
+  const w = Math.floor(oz), f = oz - w;
+  return (w || '') + (OZ_FRAC[Math.round(f*4)/4] || '') + ' oz';
+}
+function fmtMin(m) {
+  if (!m) return '0 min';
+  const h = Math.floor(m/60), rm = m%60;
+  return h ? `${h}h ${rm}m` : `${m}m`;
+}
+function fmtElapsed(startISO) {
+  const s = Math.floor((Date.now() - new Date(startISO)) / 1000);
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  const p = n => String(n).padStart(2,'0');
+  return h ? `${h}:${p(m)}:${p(sec)}` : `${m}:${p(sec)}`;
+}
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+// ─────────────────────────────────────────
+// Storage
+// ─────────────────────────────────────────
+function load()         { try { return JSON.parse(localStorage.getItem(STORE))||[]; } catch { return []; } }
+function save(evts)     { localStorage.setItem(STORE, JSON.stringify(evts)); }
+function addEvt(e)      { const a=load(); a.push(e); save(a); }
+function updateEvt(id,p){ const a=load(), i=a.findIndex(e=>e.id===id); if(i>=0){Object.assign(a[i],p);save(a);return a[i];} }
+function removeEvt(id)  { save(load().filter(e=>e.id!==id)); }
+
+function activeTimers() { return load().filter(e=>!e.end && e.type!=='bottle'); }
+
+// ─────────────────────────────────────────
+// Active timer UI
+// ─────────────────────────────────────────
+let _tick = null;
+
+function renderTimers() {
+  const ct = document.getElementById('active-timers');
+  const active = activeTimers();
+  ct.innerHTML = '';
+  active.forEach(e => {
+    const d = document.createElement('div');
+    d.className = `timer-card ${e.type}`;
+    d.innerHTML = `
+      <div class="timer-meta">
+        <span class="timer-type">${ICONS[e.type]} ${LABELS[e.type]}</span>
+        <span class="timer-clock" id="clk-${e.id}">${fmtElapsed(e.start)}</span>
+      </div>
+      <button class="stop-btn" onclick="stopTimer('${e.id}')">Stop</button>`;
+    ct.appendChild(d);
+  });
+}
+
+function tickTimers() {
+  activeTimers().forEach(e => {
+    const el = document.getElementById('clk-'+e.id);
+    if (el) el.textContent = fmtElapsed(e.start);
+  });
+}
+
+// ─────────────────────────────────────────
+// Timer actions
+// ─────────────────────────────────────────
+function startTimer(type) {
+  const e = { id:uid(), type, start:new Date().toISOString(), end:null };
+  if (type==='breast') { e.rightMin=0; e.leftMin=0; }
+  if (type==='pump')   { e.rightOz=0; e.leftOz=0; }
+  addEvt(e);
+  renderTimers();
+  renderCalendar();
+}
+
+function stopTimer(id) {
+  const e = load().find(x=>x.id===id);
+  if (!e) return;
+  const elapsedMin = Math.round((Date.now()-new Date(e.start))/60000);
+  if (e.type==='sleep') {
+    updateEvt(id, { end:new Date().toISOString() });
+    renderTimers(); renderCalendar();
+  } else if (e.type==='breast') {
+    openBreastStopModal(id, elapsedMin);
+  } else if (e.type==='pump') {
+    openPumpStopModal(id);
+  }
+}
+
+// ─────────────────────────────────────────
+// Modal helpers
+// ─────────────────────────────────────────
+let ms = {}; // modal state
+
+function showModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function hideModal() {
+  document.getElementById('overlay').classList.add('hidden');
+  ms = {};
+}
+function overlayClick(e) {
+  if (e.target === document.getElementById('overlay')) hideModal();
+}
+
+// ─────────────────────────────────────────
+// Bottle modal
+// ─────────────────────────────────────────
+function openBottleModal(prefillOz) {
+  ms = { oz: prefillOz || 3 };
+  _renderBottle();
+}
+function _renderBottle() {
+  showModal(`
+    <h2>🍼 Bottle Feed</h2>
+    <div class="modal-row">
+      <span class="modal-lbl">Amount</span>
+      <div class="stepper">
+        <button class="step-btn" onclick="stepBottle(-1)">−</button>
+        <span class="step-val" id="bot-oz">${fmtOz(ms.oz)}</span>
+        <button class="step-btn" onclick="stepBottle(1)">+</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-cancel" onclick="hideModal()">Cancel</button>
+      <button class="mbtn mbtn-confirm" onclick="confirmBottle()">Log</button>
+    </div>`);
+}
+function stepBottle(d) {
+  ms.oz = Math.max(0.25, Math.min(20, ms.oz + d*0.25));
+  document.getElementById('bot-oz').textContent = fmtOz(ms.oz);
+}
+function confirmBottle() {
+  const now = new Date().toISOString();
+  addEvt({ id:uid(), type:'bottle', start:now, end:now, oz:ms.oz });
+  hideModal(); renderCalendar();
+}
+
+// ─────────────────────────────────────────
+// Breast stop modal
+// ─────────────────────────────────────────
+function openBreastStopModal(id, elapsed) {
+  ms = { id, rightMin:Math.ceil(elapsed/2), leftMin:Math.floor(elapsed/2) };
+  _renderBreast();
+}
+function _renderBreast() {
+  showModal(`
+    <h2>🤱 Log Sides</h2>
+    <div class="modal-row">
+      <span class="modal-lbl">Right (min)</span>
+      <div class="stepper">
+        <button class="step-btn" onclick="stepBreast('rightMin',-1)">−</button>
+        <span class="step-val" id="br-r">${ms.rightMin}</span>
+        <button class="step-btn" onclick="stepBreast('rightMin',1)">+</button>
+      </div>
+    </div>
+    <div class="modal-row">
+      <span class="modal-lbl">Left (min)</span>
+      <div class="stepper">
+        <button class="step-btn" onclick="stepBreast('leftMin',-1)">−</button>
+        <span class="step-val" id="br-l">${ms.leftMin}</span>
+        <button class="step-btn" onclick="stepBreast('leftMin',1)">+</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-cancel" onclick="hideModal()">Cancel</button>
+      <button class="mbtn mbtn-confirm" onclick="confirmBreast()">Save</button>
+    </div>`);
+}
+function stepBreast(f, d) {
+  ms[f] = Math.max(0, ms[f]+d);
+  document.getElementById(f==='rightMin'?'br-r':'br-l').textContent = ms[f];
+}
+function confirmBreast() {
+  updateEvt(ms.id, { end:new Date().toISOString(), rightMin:ms.rightMin, leftMin:ms.leftMin });
+  hideModal(); renderTimers(); renderCalendar();
+}
+
+// ─────────────────────────────────────────
+// Pump stop modal
+// ─────────────────────────────────────────
+function openPumpStopModal(id) {
+  ms = { id, rightOz:2, leftOz:2 };
+  _renderPump();
+}
+function _renderPump() {
+  showModal(`
+    <h2>🩵 Log Yield</h2>
+    <div class="modal-row">
+      <span class="modal-lbl">Right</span>
+      <div class="stepper">
+        <button class="step-btn" onclick="stepPump('rightOz',-1)">−</button>
+        <span class="step-val" id="pu-r">${fmtOz(ms.rightOz)}</span>
+        <button class="step-btn" onclick="stepPump('rightOz',1)">+</button>
+      </div>
+    </div>
+    <div class="modal-row">
+      <span class="modal-lbl">Left</span>
+      <div class="stepper">
+        <button class="step-btn" onclick="stepPump('leftOz',-1)">−</button>
+        <span class="step-val" id="pu-l">${fmtOz(ms.leftOz)}</span>
+        <button class="step-btn" onclick="stepPump('leftOz',1)">+</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-cancel" onclick="hideModal()">Cancel</button>
+      <button class="mbtn mbtn-confirm" onclick="confirmPump()">Save</button>
+    </div>`);
+}
+function stepPump(f, d) {
+  ms[f] = Math.max(0, Math.min(20, ms[f]+d*0.25));
+  document.getElementById(f==='rightOz'?'pu-r':'pu-l').textContent = fmtOz(ms[f]);
+}
+function confirmPump() {
+  updateEvt(ms.id, { end:new Date().toISOString(), rightOz:ms.rightOz, leftOz:ms.leftOz });
+  hideModal(); renderTimers(); renderCalendar();
+}
+
+// ─────────────────────────────────────────
+// Event detail modal
+// ─────────────────────────────────────────
+function openDetail(id) {
+  const e = load().find(x=>x.id===id);
+  if (!e) return;
+  const st = new Date(e.start);
+  const timeStr = st.toLocaleString([],{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  let rows = '';
+  if (e.type==='bottle') {
+    rows = `<div class="detail-row"><span>Amount</span><span class="detail-val">${fmtOz(e.oz)}</span></div>`;
+  } else {
+    const dur = e.end ? Math.round((new Date(e.end)-st)/60000) : null;
+    rows += dur!=null
+      ? `<div class="detail-row"><span>Duration</span><span class="detail-val">${fmtMin(dur)}</span></div>`
+      : `<div class="detail-row"><span>Status</span><span class="detail-val" style="color:var(--sleep)">In progress</span></div>`;
+    if (e.type==='breast') {
+      rows += `<div class="detail-row"><span>Right</span><span class="detail-val">${fmtMin(e.rightMin||0)}</span></div>`;
+      rows += `<div class="detail-row"><span>Left</span><span class="detail-val">${fmtMin(e.leftMin||0)}</span></div>`;
+    }
+    if (e.type==='pump') {
+      rows += `<div class="detail-row"><span>Right</span><span class="detail-val">${fmtOz(e.rightOz||0)}</span></div>`;
+      rows += `<div class="detail-row"><span>Left</span><span class="detail-val">${fmtOz(e.leftOz||0)}</span></div>`;
+      rows += `<div class="detail-row"><span>Total</span><span class="detail-val">${fmtOz((e.rightOz||0)+(e.leftOz||0))}</span></div>`;
+    }
+  }
+  showModal(`
+    <h2>${ICONS[e.type]} ${LABELS[e.type]}</h2>
+    <p class="detail-time">${timeStr}</p>
+    ${rows}
+    <div class="modal-btns">
+      <button class="mbtn mbtn-danger" onclick="confirmDelete('${id}')">Delete</button>
+      <button class="mbtn mbtn-confirm" onclick="hideModal()">Close</button>
+    </div>`);
+}
+function confirmDelete(id) {
+  if (!confirm('Delete this entry?')) return;
+  removeEvt(id); hideModal(); renderCalendar();
+}
+
+// ─────────────────────────────────────────
+// Calendar / Timeline
+// ─────────────────────────────────────────
+let weekOffset = 0;
+
+function shiftWeek(d) {
+  weekOffset = Math.min(0, weekOffset + d);
+  document.getElementById('btn-next').disabled = weekOffset === 0;
+  renderCalendar();
+}
+
+function weekDates() {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun
+  const toMon = dow===0 ? -6 : 1-dow;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + toMon + weekOffset*7);
+  mon.setHours(0,0,0,0);
+  return Array.from({length:7},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function renderCalendar() {
+  const days = weekDates();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const events = load();
+
+  // Week label
+  const f=days[0], l=days[6];
+  document.getElementById('week-label').textContent =
+    `${MONTHS[f.getMonth()]} ${f.getDate()} – ${MONTHS[l.getMonth()]} ${l.getDate()}`;
+
+  // ── Header row ──
+  let headHTML = '<div style="border-right:1px solid var(--border)"></div>';
+  days.forEach((d,i) => {
+    const isToday = d.getTime()===today.getTime();
+    headHTML += `<div class="tl-head-cell${isToday?' today':''}">
+      <span class="dn">${DAYS[i]}</span>
+      <span class="dd">${d.getDate()}</span>
+    </div>`;
+  });
+  document.getElementById('tl-head').innerHTML = headHTML;
+
+  // ── Grid body ──
+  // Column 1: time gutter
+  let timeCol = `<div class="tl-time-col" style="height:${DAY_PX}px;position:relative">`;
+  for (let h=0; h<24; h++) {
+    const top = h*HOUR_PX;
+    const lbl = h===0?'12a': h<12?`${h}a`: h===12?'12p':`${h-12}p`;
+    timeCol += `<div class="tl-hour-label" style="top:${top}px">${lbl}</div>`;
+  }
+  timeCol += '</div>';
+
+  // Columns 2–8: day columns
+  let dayCols = '';
+  days.forEach((d, di) => {
+    const ds = d.getTime();
+    const de = ds + 86400000;
+    const dayEvts = events.filter(e => {
+      const s = new Date(e.start).getTime();
+      return s >= ds && s < de;
+    });
+
+    dayCols += `<div class="tl-day-col" style="height:${DAY_PX}px;position:relative">`;
+
+    // Hour ticks
+    for (let h=0; h<24; h++) {
+      dayCols += `<div class="hour-tick" style="top:${h*HOUR_PX}px"></div>`;
+    }
+
+    // Events
+    dayEvts.forEach(e => {
+      const sMs = new Date(e.start).getTime();
+      const eMs = e.end ? new Date(e.end).getTime() : Date.now();
+      const topPx = ((sMs-ds)/86400000)*DAY_PX;
+      const htPx  = Math.max(((eMs-sMs)/86400000)*DAY_PX, 3);
+      const live  = !e.end;
+      let lbl = '';
+      if (htPx>14) {
+        if (e.type==='bottle') lbl = fmtOz(e.oz);
+        else if (e.type==='pump') lbl = fmtOz((e.rightOz||0)+(e.leftOz||0));
+        else if (e.type==='breast' && (e.rightMin||e.leftMin)) lbl=`${e.rightMin||0}R ${e.leftMin||0}L`;
+      }
+      dayCols += `<div class="evt ${e.type}${live?' live':''}"
+        style="top:${topPx.toFixed(1)}px;height:${htPx.toFixed(1)}px"
+        onclick="openDetail('${e.id}')">${lbl}</div>`;
+    });
+
+    // Now line (today only)
+    if (d.getTime()===today.getTime()) {
+      const nowTop = ((Date.now()-ds)/86400000)*DAY_PX;
+      dayCols += `<div class="now-line" style="top:${nowTop.toFixed(1)}px"></div>`;
+    }
+
+    dayCols += '</div>';
+  });
+
+  document.getElementById('tl-grid').innerHTML = timeCol + dayCols;
+
+  // Scroll to current hour minus 2h
+  if (weekOffset===0) {
+    const body = document.getElementById('tl-body');
+    const now = new Date();
+    const scrollTo = ((now.getHours()-2)*HOUR_PX);
+    setTimeout(()=>{ body.scrollTop = Math.max(0, scrollTo); }, 30);
+  }
+}
+
+// ─────────────────────────────────────────
+// CSV Import (Huckleberry format)
+// ─────────────────────────────────────────
+document.getElementById('csv-file').addEventListener('change', function(ev) {
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = function(e) {
+    const rows = parseCSV(e.target.result);
+    const existing = load();
+    const keys = new Set(existing.map(x=>x.type+x.start));
+    let n = 0;
+    rows.forEach(x => {
+      if (!keys.has(x.type+x.start)) { existing.push(x); n++; }
+    });
+    save(existing);
+    renderCalendar();
+    alert(`Imported ${n} entries (${rows.length-n} duplicates skipped).`);
+  };
+  r.readAsText(f);
+  this.value='';
+});
+
+function parseCSV(txt) {
+  const lines = txt.trim().split('\n').slice(1);
+  const out = [];
+  for (const line of lines) {
+    const c = splitCSV(line);
+    // c[0]=Type  c[1]=Start  c[2]=End  c[3]=Duration  c[4]=StartCond  c[5]=StartLoc  c[6]=EndCond  c[7]=Notes
+    const [type, startRaw, endRaw,,col4, col5, col6] = c;
+    if (!startRaw) continue;
+    const start = hbDate(startRaw);
+    const end   = endRaw ? hbDate(endRaw) : null;
+    if (type==='Sleep') {
+      out.push({id:uid(),type:'sleep',start,end});
+    } else if (type==='Feed' && col5==='Breast') {
+      out.push({id:uid(),type:'breast',start,end,rightMin:hbMin(col4),leftMin:hbMin(col6)});
+    } else if (type==='Feed' && col5==='Bottle') {
+      out.push({id:uid(),type:'bottle',start,end:start,oz:parseFloat(col6)||0});
+    } else if (type==='Pump') {
+      out.push({id:uid(),type:'pump',start,end,rightOz:parseFloat(col4)||0,leftOz:parseFloat(col6)||0});
+    }
+    // Meds: skip
+  }
+  return out;
+}
+
+function splitCSV(line) {
+  const r=[]; let cur='', q=false;
+  for (const ch of line) {
+    if (ch==='"') { q=!q; }
+    else if (ch===',' && !q) { r.push(cur); cur=''; }
+    else cur+=ch;
+  }
+  r.push(cur);
+  return r;
+}
+function hbDate(s) { return new Date(s.trim().replace(' ','T')).toISOString(); }
+function hbMin(s) {
+  if (!s) return 0;
+  const m = s.match(/(\d+):(\d+)/);
+  return m ? parseInt(m[1])*60+parseInt(m[2]) : 0;
+}
+
+// ─────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────
+renderTimers();
+renderCalendar();
+_tick = setInterval(()=>{ tickTimers(); }, 1000);
+setInterval(()=>{ renderCalendar(); }, 60000); // refresh now-line
+</script>
+</body>
+</html>
