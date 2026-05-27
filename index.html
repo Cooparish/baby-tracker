@@ -6,21 +6,17 @@
   <title>Baby Tracker</title>
   <style>
     :root {
-      --sleep:        #4ade80;
-      --sleep-dk:     #14532d;
-      --breast:       #60a5fa;
-      --breast-dk:    #1e3a5f;
-      --bottle:       #fb923c;
-      --bottle-dk:    #7c2d12;
-      --pump:         #e879f9;
-      --pump-dk:      #581c87;
-      --bg:           #0f172a;
-      --surface:      #1e293b;
-      --surface2:     #334155;
-      --border:       #475569;
-      --text:         #f1f5f9;
-      --muted:        #94a3b8;
-      --red:          #ef4444;
+      --sleep:    #4ade80; --sleep-dk:  #14532d;
+      --breast:   #60a5fa; --breast-dk: #1e3a5f;
+      --bottle:   #fb923c; --bottle-dk: #7c2d12;
+      --pump:     #e879f9; --pump-dk:   #581c87;
+      --bg:       #0f172a;
+      --surface:  #1e293b;
+      --surface2: #334155;
+      --border:   #475569;
+      --text:     #f1f5f9;
+      --muted:    #94a3b8;
+      --red:      #ef4444;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
@@ -48,8 +44,7 @@
       z-index: 50;
       flex-shrink: 0;
     }
-    header h1 { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
-    .header-actions { display: flex; gap: 8px; align-items: center; }
+    header h1 { font-size: 1rem; font-weight: 700; }
     .header-btn {
       background: var(--surface2);
       border: 1px solid var(--border);
@@ -76,12 +71,7 @@
     .timer-card.pump   { border-color: var(--pump); }
     .timer-meta { display: flex; flex-direction: column; gap: 1px; }
     .timer-type { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-    .timer-clock {
-      font-size: 1.6rem;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.02em;
-    }
+    .timer-clock { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
     .stop-btn {
       background: var(--surface2);
       border: 1px solid var(--border);
@@ -91,9 +81,27 @@
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
-      white-space: nowrap;
     }
     .stop-btn:active { opacity: 0.8; }
+    /* Inline start-time editor inside the sleep timer card */
+    .start-time-edit {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .start-time-lbl { font-size: 0.62rem; color: var(--muted); }
+    .time-input-inline {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-family: inherit;
+      padding: 1px 3px;
+      width: 80px;
+    }
+    .time-input-inline::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
 
     /* ── Quick Actions ── */
     #quick-actions {
@@ -103,10 +111,13 @@
       padding: 10px 12px;
       flex-shrink: 0;
     }
+    .breast-pair { display: flex; gap: 8px; }
+    .breast-pair .action-btn { flex: 1; min-width: 0; }
+
     .action-btn {
       border: none;
       border-radius: 16px;
-      padding: 14px 14px 12px;
+      padding: 14px 10px 12px;
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -114,11 +125,12 @@
       text-align: left;
       transition: transform 0.1s, opacity 0.1s;
       -webkit-tap-highlight-color: transparent;
+      width: 100%;
     }
     .action-btn:active { transform: scale(0.95); opacity: 0.85; }
-    .action-btn .a-icon { font-size: 1.4rem; line-height: 1; margin-bottom: 4px; }
-    .action-btn .a-label { font-size: 0.92rem; font-weight: 700; }
-    .action-btn .a-sub   { font-size: 0.72rem; opacity: 0.75; }
+    .action-btn .a-icon  { font-size: 1.3rem; line-height: 1; margin-bottom: 3px; }
+    .action-btn .a-label { font-size: 0.88rem; font-weight: 700; }
+    .action-btn .a-sub   { font-size: 0.68rem; opacity: 0.75; }
     .action-btn.sleep  { background: var(--sleep);  color: var(--sleep-dk); }
     .action-btn.breast { background: var(--breast); color: var(--breast-dk); }
     .action-btn.bottle { background: var(--bottle); color: var(--bottle-dk); }
@@ -126,105 +138,87 @@
 
     /* ── Calendar ── */
     #calendar { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .week-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 6px 12px;
-      flex-shrink: 0;
+
+    .week-nav { padding: 4px 12px 6px; flex-shrink: 0; }
+    #week-label {
+      display: block;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 5px;
     }
-    .week-nav-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 5px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
+    .week-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--surface2);
+      outline: none;
       cursor: pointer;
     }
-    .week-nav-btn:disabled { opacity: 0.35; cursor: default; }
-    #week-label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
-
-    /* Legend */
-    .legend {
-      display: flex;
-      gap: 12px;
-      padding: 2px 12px 6px;
-      flex-wrap: wrap;
-      flex-shrink: 0;
+    .week-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--breast);
+      cursor: pointer;
     }
+    .week-slider::-moz-range-thumb {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--breast);
+      border: none;
+      cursor: pointer;
+    }
+
+    .legend { display: flex; gap: 12px; padding: 2px 12px 5px; flex-wrap: wrap; flex-shrink: 0; }
     .leg { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--muted); }
     .leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 
-    /* Timeline wrapper */
-    .tl-outer {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Day header row (fixed, outside scroll) */
+    /* Timeline */
+    .tl-outer { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
     .tl-head {
       display: grid;
-      grid-template-columns: 34px repeat(7, 1fr);
+      grid-template-columns: 24px repeat(7, 1fr);
       flex-shrink: 0;
       border-bottom: 1px solid var(--border);
       background: var(--surface);
     }
     .tl-head-cell {
-      padding: 4px 2px;
+      padding: 3px 2px;
       text-align: center;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       color: var(--muted);
       border-left: 1px solid var(--border);
     }
     .tl-head-cell:first-child { border-left: none; }
     .tl-head-cell.today { color: var(--breast); font-weight: 700; }
-    .tl-head-cell .dn { display: block; font-size: 0.62rem; text-transform: uppercase; }
-    .tl-head-cell .dd { display: block; font-size: 1rem; font-weight: 700; line-height: 1.1; }
+    .tl-head-cell .dn { display: block; font-size: 0.55rem; text-transform: uppercase; }
+    .tl-head-cell .dd { display: block; font-size: 0.9rem; font-weight: 700; line-height: 1.1; }
 
-    /* Scrollable body */
-    .tl-body {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    .tl-grid {
-      display: grid;
-      grid-template-columns: 34px repeat(7, 1fr);
-    }
+    .tl-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .tl-grid { display: grid; grid-template-columns: 24px repeat(7, 1fr); }
 
-    /* Time gutter */
     .tl-time-col { position: relative; }
     .tl-hour-label {
       position: absolute;
-      right: 3px;
-      font-size: 0.55rem;
+      right: 2px;
+      font-size: 0.45rem;
       color: var(--border);
       transform: translateY(-50%);
       white-space: nowrap;
     }
+    .tl-day-col { position: relative; border-left: 1px solid var(--border); }
+    .hour-tick { position: absolute; left: 0; right: 0; border-top: 1px solid var(--border); opacity: 0.15; }
+    .hour-tick.major { opacity: 0.35; }
 
-    /* Day columns */
-    .tl-day-col {
-      position: relative;
-      border-left: 1px solid var(--border);
-    }
-    .hour-tick {
-      position: absolute;
-      left: 0; right: 0;
-      border-top: 1px solid var(--border);
-      opacity: 0.25;
-    }
-
-    /* Events */
     .evt {
       position: absolute;
       left: 1px; right: 1px;
       border-radius: 3px;
       padding: 1px 2px;
-      font-size: 0.55rem;
+      font-size: 0.48rem;
       font-weight: 600;
       overflow: hidden;
       cursor: pointer;
@@ -235,21 +229,13 @@
     .evt.breast { background: var(--breast); color: var(--breast-dk); }
     .evt.bottle { background: var(--bottle); color: var(--bottle-dk); }
     .evt.pump   { background: var(--pump);   color: var(--pump-dk); }
-    .evt.live   { opacity: 0.65; outline: 1px dashed rgba(255,255,255,0.4); }
+    .evt.live   { opacity: 0.65; outline: 1px dashed rgba(255,255,255,0.35); }
 
-    /* Now line */
-    .now-line {
-      position: absolute;
-      left: 0; right: 0;
-      height: 2px;
-      background: var(--red);
-      z-index: 5;
-    }
+    .now-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--red); z-index: 5; }
     .now-line::before {
       content: '';
       position: absolute;
-      left: -3px;
-      top: -3px;
+      left: -3px; top: -3px;
       width: 8px; height: 8px;
       border-radius: 50%;
       background: var(--red);
@@ -257,8 +243,7 @@
 
     /* ── Modal ── */
     .overlay {
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background: rgba(0,0,0,0.65);
       z-index: 200;
       display: flex;
@@ -273,7 +258,7 @@
       width: 100%;
       max-width: 480px;
     }
-    .modal h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; }
+    .modal h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 14px; }
     .modal-row {
       display: flex;
       align-items: center;
@@ -283,6 +268,19 @@
     }
     .modal-row:last-of-type { border-bottom: none; }
     .modal-lbl { font-size: 0.88rem; color: var(--muted); }
+
+    /* Time input */
+    .time-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    .time-input::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+
     .stepper { display: flex; align-items: center; gap: 10px; }
     .step-btn {
       width: 36px; height: 36px;
@@ -295,28 +293,23 @@
       display: flex; align-items: center; justify-content: center;
     }
     .step-btn:active { opacity: 0.7; }
-    .step-val {
-      font-size: 1.05rem;
-      font-weight: 700;
-      min-width: 62px;
-      text-align: center;
-    }
-    .modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+    .step-val { font-size: 1.05rem; font-weight: 700; min-width: 62px; text-align: center; }
+
+    .modal-btns { display: flex; gap: 8px; margin-top: 18px; }
     .mbtn {
       flex: 1;
-      padding: 13px;
+      padding: 13px 6px;
       border-radius: 12px;
       border: none;
-      font-size: 0.92rem;
+      font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
     }
     .mbtn-cancel  { background: var(--surface2); color: var(--text); }
+    .mbtn-scrap   { background: #451a1a; color: #fca5a5; }
     .mbtn-confirm { background: #3b82f6; color: white; }
     .mbtn-danger  { background: #7f1d1d; color: #fca5a5; }
 
-    /* Detail modal extras */
-    .detail-time { font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; }
     .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     .detail-row:last-of-type { border-bottom: none; }
     .detail-val { font-weight: 700; }
@@ -326,27 +319,32 @@
 
 <header>
   <h1>🍼 Baby Tracker</h1>
-  <div class="header-actions">
-    <label class="header-btn" style="cursor:pointer">
-      Import CSV
-      <input type="file" accept=".csv" id="csv-file" style="display:none">
-    </label>
-  </div>
+  <label class="header-btn" style="cursor:pointer">
+    Import CSV
+    <input type="file" accept=".csv" id="csv-file" style="display:none">
+  </label>
 </header>
 
 <div id="active-timers"></div>
 
 <div id="quick-actions">
-  <button class="action-btn sleep"  onclick="startTimer('sleep')">
+  <button class="action-btn sleep" onclick="startTimer('sleep')">
     <span class="a-icon">😴</span>
     <span class="a-label">Sleep</span>
     <span class="a-sub">Start / stop nap</span>
   </button>
-  <button class="action-btn breast" onclick="startTimer('breast')">
-    <span class="a-icon">🤱</span>
-    <span class="a-label">Breast Feed</span>
-    <span class="a-sub">Timer + L/R sides</span>
-  </button>
+  <div class="breast-pair">
+    <button class="action-btn breast" onclick="startTimer('breast','L')">
+      <span class="a-icon">🤱</span>
+      <span class="a-label">Left</span>
+      <span class="a-sub">Breast</span>
+    </button>
+    <button class="action-btn breast" onclick="startTimer('breast','R')">
+      <span class="a-icon">🤱</span>
+      <span class="a-label">Right</span>
+      <span class="a-sub">Breast</span>
+    </button>
+  </div>
   <button class="action-btn bottle" onclick="openBottleModal()">
     <span class="a-icon">🍼</span>
     <span class="a-label">Bottle</span>
@@ -361,9 +359,11 @@
 
 <div id="calendar">
   <div class="week-nav">
-    <button class="week-nav-btn" onclick="shiftWeek(-1)">← Prev</button>
     <span id="week-label"></span>
-    <button class="week-nav-btn" id="btn-next" onclick="shiftWeek(1)" disabled>Next →</button>
+    <!-- step=2 → slides 2 days per notch; min=-182 → ~6 months back -->
+    <input type="range" class="week-slider" id="week-slider"
+           min="-182" max="0" step="2" value="0"
+           oninput="setDayOffset(this.value)">
   </div>
   <div class="legend">
     <div class="leg"><div class="leg-dot" style="background:var(--sleep)"></div>Sleep</div>
@@ -379,35 +379,39 @@
   </div>
 </div>
 
-<!-- Modal -->
 <div class="overlay hidden" id="overlay" onclick="overlayClick(event)">
   <div class="modal" id="modal-content"></div>
 </div>
 
 <script>
-// ─────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────
-const STORE = 'btr_v1';
-const HOUR_PX = 52;
+// ─── Constants ───────────────────────────
+const STORE   = 'btr_v1';
+const HOUR_PX = 26;
 const DAY_PX  = HOUR_PX * 24;
 
-const LABELS = { sleep:'Sleep', breast:'Breast Feed', bottle:'Bottle', pump:'Pump' };
-const ICONS  = { sleep:'😴', breast:'🤱', bottle:'🍼', pump:'🩵' };
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAYS   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DOW    = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-// oz → fraction string
+function evtLabel(e) {
+  if (e.type === 'breast') return e.side === 'L' ? 'Left Breast' : e.side === 'R' ? 'Right Breast' : 'Breast Feed';
+  return { sleep:'Sleep', bottle:'Bottle', pump:'Pump' }[e.type] || e.type;
+}
+function evtIcon(e) {
+  return { sleep:'😴', breast:'🤱', bottle:'🍼', pump:'🩵' }[e.type] || '';
+}
+
 const OZ_FRAC = { 0.25:'¼', 0.5:'½', 0.75:'¾' };
 function fmtOz(oz) {
   if (!oz) return '0 oz';
   const w = Math.floor(oz), f = oz - w;
   return (w || '') + (OZ_FRAC[Math.round(f*4)/4] || '') + ' oz';
 }
-function fmtMin(m) {
-  if (!m) return '0 min';
-  const h = Math.floor(m/60), rm = m%60;
-  return h ? `${h}h ${rm}m` : `${m}m`;
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+function fmtTimeInput(iso) {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 function fmtElapsed(startISO) {
   const s = Math.floor((Date.now() - new Date(startISO)) / 1000);
@@ -417,20 +421,23 @@ function fmtElapsed(startISO) {
 }
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
-// ─────────────────────────────────────────
-// Storage
-// ─────────────────────────────────────────
-function load()         { try { return JSON.parse(localStorage.getItem(STORE))||[]; } catch { return []; } }
-function save(evts)     { localStorage.setItem(STORE, JSON.stringify(evts)); }
-function addEvt(e)      { const a=load(); a.push(e); save(a); }
-function updateEvt(id,p){ const a=load(), i=a.findIndex(e=>e.id===id); if(i>=0){Object.assign(a[i],p);save(a);return a[i];} }
-function removeEvt(id)  { save(load().filter(e=>e.id!==id)); }
+// Reconstruct an ISO date keeping today's date but replacing time from HH:MM input
+function applyTimeInput(originalISO, timeStr) {
+  const base = new Date(originalISO);
+  const [h, m] = timeStr.split(':').map(Number);
+  base.setHours(h, m, 0, 0);
+  return base.toISOString();
+}
 
-function activeTimers() { return load().filter(e=>!e.end && e.type!=='bottle'); }
+// ─── Storage ─────────────────────────────
+function load()          { try { return JSON.parse(localStorage.getItem(STORE))||[]; } catch { return []; } }
+function save(evts)      { localStorage.setItem(STORE, JSON.stringify(evts)); }
+function addEvt(e)       { const a=load(); a.push(e); save(a); }
+function updateEvt(id,p) { const a=load(), i=a.findIndex(e=>e.id===id); if(i>=0){Object.assign(a[i],p);save(a);} }
+function removeEvt(id)   { save(load().filter(e=>e.id!==id)); }
+function activeTimers()  { return load().filter(e=>!e.end && e.type!=='bottle'); }
 
-// ─────────────────────────────────────────
-// Active timer UI
-// ─────────────────────────────────────────
+// ─── Active Timer UI ─────────────────────
 let _tick = null;
 
 function renderTimers() {
@@ -440,9 +447,17 @@ function renderTimers() {
   active.forEach(e => {
     const d = document.createElement('div');
     d.className = `timer-card ${e.type}`;
+    const startEdit = e.type === 'sleep'
+      ? `<div class="start-time-edit">
+           <span class="start-time-lbl">started</span>
+           <input type="time" class="time-input-inline" value="${fmtTimeInput(e.start)}"
+                  oninput="updateStartTime('${e.id}', this.value)">
+         </div>`
+      : '';
     d.innerHTML = `
       <div class="timer-meta">
-        <span class="timer-type">${ICONS[e.type]} ${LABELS[e.type]}</span>
+        <span class="timer-type">${evtIcon(e)} ${evtLabel(e)}</span>
+        ${startEdit}
         <span class="timer-clock" id="clk-${e.id}">${fmtElapsed(e.start)}</span>
       </div>
       <button class="stop-btn" onclick="stopTimer('${e.id}')">Stop</button>`;
@@ -457,13 +472,11 @@ function tickTimers() {
   });
 }
 
-// ─────────────────────────────────────────
-// Timer actions
-// ─────────────────────────────────────────
-function startTimer(type) {
+// ─── Timer Actions ───────────────────────
+function startTimer(type, side) {
   const e = { id:uid(), type, start:new Date().toISOString(), end:null };
-  if (type==='breast') { e.rightMin=0; e.leftMin=0; }
-  if (type==='pump')   { e.rightOz=0; e.leftOz=0; }
+  if (side) e.side = side;
+  if (type==='pump') { e.rightOz=0; e.leftOz=0; }
   addEvt(e);
   renderTimers();
   renderCalendar();
@@ -472,21 +485,12 @@ function startTimer(type) {
 function stopTimer(id) {
   const e = load().find(x=>x.id===id);
   if (!e) return;
-  const elapsedMin = Math.round((Date.now()-new Date(e.start))/60000);
-  if (e.type==='sleep') {
-    updateEvt(id, { end:new Date().toISOString() });
-    renderTimers(); renderCalendar();
-  } else if (e.type==='breast') {
-    openBreastStopModal(id, elapsedMin);
-  } else if (e.type==='pump') {
-    openPumpStopModal(id);
-  }
+  if (e.type==='sleep' || e.type==='breast') openSimpleStopModal(id, e);
+  else if (e.type==='pump') openPumpStopModal(id, e);
 }
 
-// ─────────────────────────────────────────
-// Modal helpers
-// ─────────────────────────────────────────
-let ms = {}; // modal state
+// ─── Modal Helpers ───────────────────────
+let ms = {};
 
 function showModal(html) {
   document.getElementById('modal-content').innerHTML = html;
@@ -496,93 +500,41 @@ function hideModal() {
   document.getElementById('overlay').classList.add('hidden');
   ms = {};
 }
-function overlayClick(e) {
-  if (e.target === document.getElementById('overlay')) hideModal();
+function overlayClick(ev) {
+  if (ev.target === document.getElementById('overlay')) hideModal();
+}
+function scrapTimer(id) {
+  removeEvt(id); hideModal(); renderTimers(); renderCalendar();
 }
 
-// ─────────────────────────────────────────
-// Bottle modal
-// ─────────────────────────────────────────
-function openBottleModal(prefillOz) {
-  ms = { oz: prefillOz || 3 };
-  _renderBottle();
-}
-function _renderBottle() {
+// ─── Simple Stop Modal (Sleep + Breast) ──
+function openSimpleStopModal(id, e) {
+  ms = { id };
   showModal(`
-    <h2>🍼 Bottle Feed</h2>
-    <div class="modal-row">
-      <span class="modal-lbl">Amount</span>
-      <div class="stepper">
-        <button class="step-btn" onclick="stepBottle(-1)">−</button>
-        <span class="step-val" id="bot-oz">${fmtOz(ms.oz)}</span>
-        <button class="step-btn" onclick="stepBottle(1)">+</button>
-      </div>
-    </div>
+    <h2>${evtIcon(e)} ${evtLabel(e)}</h2>
     <div class="modal-btns">
-      <button class="mbtn mbtn-cancel" onclick="hideModal()">Cancel</button>
-      <button class="mbtn mbtn-confirm" onclick="confirmBottle()">Log</button>
+      <button class="mbtn mbtn-cancel"  onclick="hideModal()">Cancel</button>
+      <button class="mbtn mbtn-scrap"   onclick="scrapTimer('${id}')">Scrap</button>
+      <button class="mbtn mbtn-confirm" onclick="saveSimpleStop('${id}')">Save</button>
     </div>`);
 }
-function stepBottle(d) {
-  ms.oz = Math.max(0.25, Math.min(20, ms.oz + d*0.25));
-  document.getElementById('bot-oz').textContent = fmtOz(ms.oz);
-}
-function confirmBottle() {
-  const now = new Date().toISOString();
-  addEvt({ id:uid(), type:'bottle', start:now, end:now, oz:ms.oz });
-  hideModal(); renderCalendar();
-}
-
-// ─────────────────────────────────────────
-// Breast stop modal
-// ─────────────────────────────────────────
-function openBreastStopModal(id, elapsed) {
-  ms = { id, rightMin:Math.ceil(elapsed/2), leftMin:Math.floor(elapsed/2) };
-  _renderBreast();
-}
-function _renderBreast() {
-  showModal(`
-    <h2>🤱 Log Sides</h2>
-    <div class="modal-row">
-      <span class="modal-lbl">Right (min)</span>
-      <div class="stepper">
-        <button class="step-btn" onclick="stepBreast('rightMin',-1)">−</button>
-        <span class="step-val" id="br-r">${ms.rightMin}</span>
-        <button class="step-btn" onclick="stepBreast('rightMin',1)">+</button>
-      </div>
-    </div>
-    <div class="modal-row">
-      <span class="modal-lbl">Left (min)</span>
-      <div class="stepper">
-        <button class="step-btn" onclick="stepBreast('leftMin',-1)">−</button>
-        <span class="step-val" id="br-l">${ms.leftMin}</span>
-        <button class="step-btn" onclick="stepBreast('leftMin',1)">+</button>
-      </div>
-    </div>
-    <div class="modal-btns">
-      <button class="mbtn mbtn-cancel" onclick="hideModal()">Cancel</button>
-      <button class="mbtn mbtn-confirm" onclick="confirmBreast()">Save</button>
-    </div>`);
-}
-function stepBreast(f, d) {
-  ms[f] = Math.max(0, ms[f]+d);
-  document.getElementById(f==='rightMin'?'br-r':'br-l').textContent = ms[f];
-}
-function confirmBreast() {
-  updateEvt(ms.id, { end:new Date().toISOString(), rightMin:ms.rightMin, leftMin:ms.leftMin });
+function saveSimpleStop(id) {
+  updateEvt(id, { end: new Date().toISOString() });
   hideModal(); renderTimers(); renderCalendar();
 }
 
-// ─────────────────────────────────────────
-// Pump stop modal
-// ─────────────────────────────────────────
-function openPumpStopModal(id) {
-  ms = { id, rightOz:2, leftOz:2 };
-  _renderPump();
+function updateStartTime(id, timeStr) {
+  const e = load().find(x=>x.id===id);
+  if (!e) return;
+  updateEvt(id, { start: applyTimeInput(e.start, timeStr) });
+  // tickTimers() will pick up the new elapsed on the next 1s tick
 }
-function _renderPump() {
+
+// ─── Pump Stop Modal ─────────────────────
+function openPumpStopModal(id, e) {
+  ms = { id, rightOz:2, leftOz:2 };
   showModal(`
-    <h2>🩵 Log Yield</h2>
+    <h2>🩵 Pump</h2>
     <div class="modal-row">
       <span class="modal-lbl">Right</span>
       <div class="stepper">
@@ -600,7 +552,8 @@ function _renderPump() {
       </div>
     </div>
     <div class="modal-btns">
-      <button class="mbtn mbtn-cancel" onclick="hideModal()">Cancel</button>
+      <button class="mbtn mbtn-cancel"  onclick="hideModal()">Cancel</button>
+      <button class="mbtn mbtn-scrap"   onclick="scrapTimer('${ms.id}')">Scrap</button>
       <button class="mbtn mbtn-confirm" onclick="confirmPump()">Save</button>
     </div>`);
 }
@@ -613,38 +566,73 @@ function confirmPump() {
   hideModal(); renderTimers(); renderCalendar();
 }
 
-// ─────────────────────────────────────────
-// Event detail modal
-// ─────────────────────────────────────────
+// ─── Bottle Modal ────────────────────────
+// Includes editable time for logging a bottle after the fact
+function openBottleModal() {
+  ms = { oz: 3, timeStr: fmtTimeInput(new Date().toISOString()) };
+  showModal(`
+    <h2>🍼 Bottle Feed</h2>
+    <div class="modal-row">
+      <span class="modal-lbl">Time</span>
+      <input type="time" class="time-input" value="${ms.timeStr}"
+             oninput="ms.timeStr=this.value">
+    </div>
+    <div class="modal-row">
+      <span class="modal-lbl">Amount</span>
+      <div class="stepper">
+        <button class="step-btn" onclick="stepBottle(-1)">−</button>
+        <span class="step-val" id="bot-oz">${fmtOz(ms.oz)}</span>
+        <button class="step-btn" onclick="stepBottle(1)">+</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-cancel"  onclick="hideModal()">Cancel</button>
+      <button class="mbtn mbtn-confirm" onclick="confirmBottle()">Log</button>
+    </div>`);
+}
+function stepBottle(d) {
+  ms.oz = Math.max(0.25, Math.min(20, ms.oz + d*0.25));
+  document.getElementById('bot-oz').textContent = fmtOz(ms.oz);
+}
+function confirmBottle() {
+  const ts = applyTimeInput(new Date().toISOString(), ms.timeStr);
+  addEvt({ id:uid(), type:'bottle', start:ts, end:ts, oz:ms.oz });
+  hideModal(); renderCalendar();
+}
+
+// ─── Event Detail Modal ───────────────────
 function openDetail(id) {
   const e = load().find(x=>x.id===id);
   if (!e) return;
-  const st = new Date(e.start);
-  const timeStr = st.toLocaleString([],{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-  let rows = '';
-  if (e.type==='bottle') {
-    rows = `<div class="detail-row"><span>Amount</span><span class="detail-val">${fmtOz(e.oz)}</span></div>`;
-  } else {
-    const dur = e.end ? Math.round((new Date(e.end)-st)/60000) : null;
-    rows += dur!=null
-      ? `<div class="detail-row"><span>Duration</span><span class="detail-val">${fmtMin(dur)}</span></div>`
-      : `<div class="detail-row"><span>Status</span><span class="detail-val" style="color:var(--sleep)">In progress</span></div>`;
-    if (e.type==='breast') {
-      rows += `<div class="detail-row"><span>Right</span><span class="detail-val">${fmtMin(e.rightMin||0)}</span></div>`;
-      rows += `<div class="detail-row"><span>Left</span><span class="detail-val">${fmtMin(e.leftMin||0)}</span></div>`;
-    }
-    if (e.type==='pump') {
+  const dateStr  = new Date(e.start).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
+  const startStr = fmtTime(e.start);
+  const endStr   = e.end ? fmtTime(e.end) : null;
+
+  let rows = `<div class="detail-row"><span>Date</span><span class="detail-val">${dateStr}</span></div>`;
+  rows += `<div class="detail-row"><span>Started</span><span class="detail-val">${startStr}</span></div>`;
+
+  if (e.type === 'bottle') {
+    rows += `<div class="detail-row"><span>Amount</span><span class="detail-val">${fmtOz(e.oz)}</span></div>`;
+  } else if (endStr) {
+    rows += `<div class="detail-row"><span>Ended</span><span class="detail-val">${endStr}</span></div>`;
+    if (e.type === 'pump') {
       rows += `<div class="detail-row"><span>Right</span><span class="detail-val">${fmtOz(e.rightOz||0)}</span></div>`;
       rows += `<div class="detail-row"><span>Left</span><span class="detail-val">${fmtOz(e.leftOz||0)}</span></div>`;
       rows += `<div class="detail-row"><span>Total</span><span class="detail-val">${fmtOz((e.rightOz||0)+(e.leftOz||0))}</span></div>`;
     }
+    if (e.type === 'breast' && !e.side && (e.rightMin || e.leftMin)) {
+      rows += `<div class="detail-row"><span>Right</span><span class="detail-val">${e.rightMin||0} min</span></div>`;
+      rows += `<div class="detail-row"><span>Left</span><span class="detail-val">${e.leftMin||0} min</span></div>`;
+    }
+  } else {
+    rows += `<div class="detail-row"><span>Status</span><span class="detail-val" style="color:var(--sleep)">In progress</span></div>`;
   }
+
   showModal(`
-    <h2>${ICONS[e.type]} ${LABELS[e.type]}</h2>
-    <p class="detail-time">${timeStr}</p>
+    <h2>${evtIcon(e)} ${evtLabel(e)}</h2>
     ${rows}
     <div class="modal-btns">
-      <button class="mbtn mbtn-danger" onclick="confirmDelete('${id}')">Delete</button>
+      <button class="mbtn mbtn-danger"  onclick="confirmDelete('${id}')">Delete</button>
       <button class="mbtn mbtn-confirm" onclick="hideModal()">Close</button>
     </div>`);
 }
@@ -653,76 +641,72 @@ function confirmDelete(id) {
   removeEvt(id); hideModal(); renderCalendar();
 }
 
-// ─────────────────────────────────────────
-// Calendar / Timeline
-// ─────────────────────────────────────────
-let weekOffset = 0;
+// ─── Calendar / Timeline ─────────────────
+let dayOffset = 0; // in days, step of 2
 
-function shiftWeek(d) {
-  weekOffset = Math.min(0, weekOffset + d);
-  document.getElementById('btn-next').disabled = weekOffset === 0;
+function setDayOffset(val) {
+  dayOffset = parseInt(val);
   renderCalendar();
 }
 
-function weekDates() {
+// 7-day window anchored to Monday of the current week + dayOffset
+function windowDates() {
   const now = new Date();
-  const dow = now.getDay(); // 0=Sun
+  const dow = now.getDay();
   const toMon = dow===0 ? -6 : 1-dow;
-  const mon = new Date(now);
-  mon.setDate(now.getDate() + toMon + weekOffset*7);
-  mon.setHours(0,0,0,0);
-  return Array.from({length:7},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+  const start = new Date(now);
+  start.setDate(now.getDate() + toMon + dayOffset);
+  start.setHours(0,0,0,0);
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate()+i);
+    return d;
+  });
 }
 
 function renderCalendar() {
-  const days = weekDates();
+  const days = windowDates();
   const today = new Date(); today.setHours(0,0,0,0);
   const events = load();
 
-  // Week label
   const f=days[0], l=days[6];
   document.getElementById('week-label').textContent =
     `${MONTHS[f.getMonth()]} ${f.getDate()} – ${MONTHS[l.getMonth()]} ${l.getDate()}`;
 
-  // ── Header row ──
+  // Header row — use actual day-of-week from each date
   let headHTML = '<div style="border-right:1px solid var(--border)"></div>';
-  days.forEach((d,i) => {
+  days.forEach(d => {
     const isToday = d.getTime()===today.getTime();
     headHTML += `<div class="tl-head-cell${isToday?' today':''}">
-      <span class="dn">${DAYS[i]}</span>
+      <span class="dn">${DOW[d.getDay()]}</span>
       <span class="dd">${d.getDate()}</span>
     </div>`;
   });
   document.getElementById('tl-head').innerHTML = headHTML;
 
-  // ── Grid body ──
-  // Column 1: time gutter
+  // Time gutter — label every 2 hours
   let timeCol = `<div class="tl-time-col" style="height:${DAY_PX}px;position:relative">`;
-  for (let h=0; h<24; h++) {
-    const top = h*HOUR_PX;
+  for (let h=0; h<24; h+=2) {
     const lbl = h===0?'12a': h<12?`${h}a`: h===12?'12p':`${h-12}p`;
-    timeCol += `<div class="tl-hour-label" style="top:${top}px">${lbl}</div>`;
+    timeCol += `<div class="tl-hour-label" style="top:${h*HOUR_PX}px">${lbl}</div>`;
   }
   timeCol += '</div>';
 
-  // Columns 2–8: day columns
+  // Day columns
   let dayCols = '';
-  days.forEach((d, di) => {
+  days.forEach(d => {
     const ds = d.getTime();
-    const de = ds + 86400000;
     const dayEvts = events.filter(e => {
       const s = new Date(e.start).getTime();
-      return s >= ds && s < de;
+      return s >= ds && s < ds+86400000;
     });
 
     dayCols += `<div class="tl-day-col" style="height:${DAY_PX}px;position:relative">`;
 
-    // Hour ticks
     for (let h=0; h<24; h++) {
-      dayCols += `<div class="hour-tick" style="top:${h*HOUR_PX}px"></div>`;
+      dayCols += `<div class="hour-tick${h%2===0?' major':''}" style="top:${h*HOUR_PX}px"></div>`;
     }
 
-    // Events
     dayEvts.forEach(e => {
       const sMs = new Date(e.start).getTime();
       const eMs = e.end ? new Date(e.end).getTime() : Date.now();
@@ -730,17 +714,16 @@ function renderCalendar() {
       const htPx  = Math.max(((eMs-sMs)/86400000)*DAY_PX, 3);
       const live  = !e.end;
       let lbl = '';
-      if (htPx>14) {
+      if (htPx > 10) {
         if (e.type==='bottle') lbl = fmtOz(e.oz);
         else if (e.type==='pump') lbl = fmtOz((e.rightOz||0)+(e.leftOz||0));
-        else if (e.type==='breast' && (e.rightMin||e.leftMin)) lbl=`${e.rightMin||0}R ${e.leftMin||0}L`;
+        else if (e.type==='breast' && e.side) lbl = e.side;
       }
       dayCols += `<div class="evt ${e.type}${live?' live':''}"
         style="top:${topPx.toFixed(1)}px;height:${htPx.toFixed(1)}px"
         onclick="openDetail('${e.id}')">${lbl}</div>`;
     });
 
-    // Now line (today only)
     if (d.getTime()===today.getTime()) {
       const nowTop = ((Date.now()-ds)/86400000)*DAY_PX;
       dayCols += `<div class="now-line" style="top:${nowTop.toFixed(1)}px"></div>`;
@@ -751,29 +734,23 @@ function renderCalendar() {
 
   document.getElementById('tl-grid').innerHTML = timeCol + dayCols;
 
-  // Scroll to current hour minus 2h
-  if (weekOffset===0) {
+  if (dayOffset===0) {
     const body = document.getElementById('tl-body');
     const now = new Date();
-    const scrollTo = ((now.getHours()-2)*HOUR_PX);
-    setTimeout(()=>{ body.scrollTop = Math.max(0, scrollTo); }, 30);
+    setTimeout(()=>{ body.scrollTop = Math.max(0, (now.getHours()-2)*HOUR_PX); }, 30);
   }
 }
 
-// ─────────────────────────────────────────
-// CSV Import (Huckleberry format)
-// ─────────────────────────────────────────
+// ─── CSV Import ───────────────────────────
 document.getElementById('csv-file').addEventListener('change', function(ev) {
   const f = ev.target.files[0]; if (!f) return;
   const r = new FileReader();
   r.onload = function(e) {
-    const rows = parseCSV(e.target.result);
+    const rows = parseHB(e.target.result);
     const existing = load();
     const keys = new Set(existing.map(x=>x.type+x.start));
     let n = 0;
-    rows.forEach(x => {
-      if (!keys.has(x.type+x.start)) { existing.push(x); n++; }
-    });
+    rows.forEach(x => { if (!keys.has(x.type+x.start)) { existing.push(x); n++; } });
     save(existing);
     renderCalendar();
     alert(`Imported ${n} entries (${rows.length-n} duplicates skipped).`);
@@ -782,26 +759,19 @@ document.getElementById('csv-file').addEventListener('change', function(ev) {
   this.value='';
 });
 
-function parseCSV(txt) {
+function parseHB(txt) {
   const lines = txt.trim().split('\n').slice(1);
   const out = [];
   for (const line of lines) {
     const c = splitCSV(line);
-    // c[0]=Type  c[1]=Start  c[2]=End  c[3]=Duration  c[4]=StartCond  c[5]=StartLoc  c[6]=EndCond  c[7]=Notes
-    const [type, startRaw, endRaw,,col4, col5, col6] = c;
+    const [type, startRaw, endRaw,,col4,col5,col6] = c;
     if (!startRaw) continue;
     const start = hbDate(startRaw);
     const end   = endRaw ? hbDate(endRaw) : null;
-    if (type==='Sleep') {
-      out.push({id:uid(),type:'sleep',start,end});
-    } else if (type==='Feed' && col5==='Breast') {
-      out.push({id:uid(),type:'breast',start,end,rightMin:hbMin(col4),leftMin:hbMin(col6)});
-    } else if (type==='Feed' && col5==='Bottle') {
-      out.push({id:uid(),type:'bottle',start,end:start,oz:parseFloat(col6)||0});
-    } else if (type==='Pump') {
-      out.push({id:uid(),type:'pump',start,end,rightOz:parseFloat(col4)||0,leftOz:parseFloat(col6)||0});
-    }
-    // Meds: skip
+    if      (type==='Sleep')                   out.push({id:uid(),type:'sleep',start,end});
+    else if (type==='Feed' && col5==='Breast') out.push({id:uid(),type:'breast',start,end,rightMin:hbMin(col4),leftMin:hbMin(col6)});
+    else if (type==='Feed' && col5==='Bottle') out.push({id:uid(),type:'bottle',start,end:start,oz:parseFloat(col6)||0});
+    else if (type==='Pump')                    out.push({id:uid(),type:'pump',start,end,rightOz:parseFloat(col4)||0,leftOz:parseFloat(col6)||0});
   }
   return out;
 }
@@ -809,7 +779,7 @@ function parseCSV(txt) {
 function splitCSV(line) {
   const r=[]; let cur='', q=false;
   for (const ch of line) {
-    if (ch==='"') { q=!q; }
+    if (ch==='"') q=!q;
     else if (ch===',' && !q) { r.push(cur); cur=''; }
     else cur+=ch;
   }
@@ -817,19 +787,13 @@ function splitCSV(line) {
   return r;
 }
 function hbDate(s) { return new Date(s.trim().replace(' ','T')).toISOString(); }
-function hbMin(s) {
-  if (!s) return 0;
-  const m = s.match(/(\d+):(\d+)/);
-  return m ? parseInt(m[1])*60+parseInt(m[2]) : 0;
-}
+function hbMin(s)  { if (!s) return 0; const m=s.match(/(\d+):(\d+)/); return m?parseInt(m[1])*60+parseInt(m[2]):0; }
 
-// ─────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────
+// ─── Init ────────────────────────────────
 renderTimers();
 renderCalendar();
-_tick = setInterval(()=>{ tickTimers(); }, 1000);
-setInterval(()=>{ renderCalendar(); }, 60000); // refresh now-line
+_tick = setInterval(tickTimers, 1000);
+setInterval(renderCalendar, 60000);
 </script>
 </body>
 </html>
